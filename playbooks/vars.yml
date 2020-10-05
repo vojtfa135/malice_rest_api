@@ -1,0 +1,48 @@
+remote_user: root
+remote_group: root
+base_dir: /var/www/
+malice_repo: https://github.com/malice-plugins/
+malice_base: /tmp/malice/
+malice_flask_repo: THIS HAS TO BE CHANGED TO A NEW REPOSITORY
+malice_flask_dest: /tmp/malice_flask/
+venv: .venv
+go_file: scan.go
+sh_file: update.sh
+
+packages:
+  - httpd
+  - docker
+
+services:
+  - httpd
+  - docker
+
+pip_pkgs:
+  - flask
+  - celery
+
+cgi_bin_scripts:
+  - app.py
+  - celery_init.py
+  - db.py
+
+antiviruses:
+  - clamav
+  - comodo
+  - escan
+  - fsecure
+  - mcafee
+  - sophos
+
+go_updated_antiviruses:
+  - clamav
+  - fsecure
+
+sh_updated_antiviruses: fsecure
+
+pre_start_flask_cmd:
+  - export FLASK_APP=app.py
+  - export FLASK_ENV=development
+  - flask run
+
+pre_start_celery_cmd: celery -A app.celery worker
