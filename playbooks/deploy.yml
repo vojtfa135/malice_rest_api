@@ -1,0 +1,96 @@
+---
+- hosts: localhost
+  include_vars:
+    file: vars.yml
+  remote_user: "{{ remote_user }}"
+  tasks:
+
+    - name: Ensure "{{ packages }}" is installed
+      yum:
+        name: "{{ packages }}"
+        state: latest
+
+    - name: Ensure "{{ services }}" is running
+      service:
+        name: "{{ services }}"
+        state: started
+        enabled: yes
+
+    - name: Download base AVs from Github (Malice project)
+      git:
+        repo: "{{ malice_repo }}{{ item }}.git"
+        dest: "{{ malice_base }}{{ item }}"
+        clone: yes
+      loop: "{{ antiviruses }}"
+
+    - name: Download Malice flask repo
+      git:
+        repo: "{{ malice_flask_repo }}"
+        dest: "{{ malice_flask_dest }}"
+        clone: yes
+
+    - name: Copy scripts to their destination
+      copy:
+        src: "{{ malice_flask_dest }}/{{ item }}"
+        dest: "{{ base_dir }}cgi-bin"
+        owner: "{{ remote_user }}"
+        group: "{{ remote_group }}"
+        mode: "0644"
+      loop: "{{ cgi_bin_scripts }}"
+
+    - name: Copy updated Dockerfiles to the AVs
+      copy:
+        src: "{{ malice_flask_dest }}AVs_in_use/{{ item }}/Dockerfile"
+        dest: "{{ malice_base }}{{ item }}"
+        owner: "{{ remote_user }}" 
+        group: "{{ remote_group }}"
+        mode: "0644"
+      loop: "{{ antiviruses }}"
+
+    - name: Copy updated go files to the AVs
+      copy:
+        src: "{{ malice_flask_dest }}AVs_in_use/{{ item }}/{{ go_file }}"
+        dest: "{{ malice_base }}{{ item }}"
+        owner: "{{ remote_user }}" 
+        group: "{{ remote_group }}"
+        mode: "0644"
+      loop: "{{ go_updated_antiviruses }}"
+
+    - name: Copy updated shell scripts to the AVs
+      copy:
+        src: "{{ malice_flask_dest }}Avs_in_use/{{ item }}/{{ sh_file }}"
+        dest: "{{ malice_base }}{{ item }}"
+        owner: "{{ remote_user }}" 
+        group: "{{ remote_group }}"
+        mode: "0644"
+      loop: "{{ sh_updated_antiviruses }}"
+
+    - name: Build Docker images
+      docker_image:
+        name: "{{ item }}"
+        tag: latest
+        build:
+          path: "{{ malice_base }}{{ item }}"
+        source: build
+      loop: "{{ antiviruses }}"
+
+    - name: Run Redis in Docker
+      docker_container:
+        name: redis
+        image: redis
+        state: started
+        ports:
+          - "6379:6379"
+
+    - name: Install Python packages required to run the app
+      pip:
+        name: "{{ item }}"
+        virtualenv: "{{ base_dir }}{{ venv }}"
+      loop: "{{ pip_pkgs }}"
+
+    - name: Start Flask
+      command: "{{ item }}"
+      loop: "{{ pre_start_flask_cmd }}"
+
+    - name: Start Celery
+      command: "{{ pre_start_celery_cmd }}"
