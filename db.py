@@ -9,7 +9,7 @@ def db_init(db_path="/var/www/db/"):
     db = str(subprocess.run(["ls", db_path], stdout=subprocess.PIPE).stdout)
     db = db.strip("b'").split("\\n")
     db.remove("")
-    return (db, db_path)
+    return db, db_path
 
 
 def db_get_entry(entry):
