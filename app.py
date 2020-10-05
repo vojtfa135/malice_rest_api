@@ -1,4 +1,3 @@
-
 from flask import Flask, request
 from celery import Celery
 from celery_init import make_celery
