@@ -34,7 +34,7 @@ def main():
         },
         avs["sophos"]: {
             "detected": 0
-        },
+        }
     }
 
     # test malware samples
