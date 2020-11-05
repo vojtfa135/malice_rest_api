@@ -1,118 +1,43 @@
 ---
-version: '3.8'
+version: "3.7"
 services:
-
-  # docker run -v /var/www/scans:/malware comodo malware_file
   server:
-    image: x0rzkov/malice-rest-api:latest
-    container_name: ${NAMESPACE}-api
+    container_name: malice_flask_app
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-    - 8890:8890
+      - 8890:8890
+    expose:
+      - 8890
     volumes:
-    - ./db.py:/opt/service/db.py
-    - ./app.py:/opt/service/app.py
-    - /var/run/docker.sock:/var/run/docker.sock
-    - scan-data:/var/www/scans
-    - scan-db:/var/www/db
-    networks:
-    - internal
-    - web
-    depends_on:
-    - redis
-    # - clamav
-    - comodo
-    - escan
-    - fsecure
-    #- mcafee
-    #- sophos
-    #- kaspersky
+      - ./app.py:/var/www/cgi-bin/app.py
+      - ./db.py:/var/www/cgi-bin/db.py
+      - ./celery_init.py:/var/www/cgi-bin/celery_init.py
+      - scan-data:/var/www/scans
+      - scan-db:/var/www/db
     environment:
-    - FLASK_APP=app.py
-    - FLASK_ENV=development
-    - FLASK_RUN_HOST=0.0.0.0
-    - FLASK_RUN_PORT=8890
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - FLASK_RUN_HOST=0.0.0.0
+      - FLASK_RUN_PORT=8890
+    depends_on:
+      - redis
+      - clamav
     command: ["./entrypoint.sh"]
 
   redis:
-    image: redis:5-alpine
-    container_name: ${NAMESPACE}-kv
-    networks:
-    - internal
+    image: redis
+    container_name: redis
 
   clamav:
     image: clamav:latest
-    container_name: ${NAMESPACE}-clamav
+    container_name: malice_rest_clamav
     build:
       context: ./AVs/clamav
       dockerfile: Dockerfile
-    networks:
-    - internal
     volumes:
-    - scan-malware:/malware
-
-  comodo:
-    image: comodo:latest
-    container_name: ${NAMESPACE}-comodo
-    build:
-      context: ./AVs/comodo
-      dockerfile: Dockerfile
-    networks:
-    - internal
-    volumes:
-    - scan-malware:/malware
-
-  escan:
-    image: escan:latest
-    container_name: ${NAMESPACE}-escan
-    build:
-      context: ./AVs/escan
-      dockerfile: Dockerfile
-    networks:
-    - internal
-    volumes:
-    - scan-malware:/malware
-
-  fsecure:
-    image: fsecure:latest
-    container_name: ${NAMESPACE}-fsecure
-    build:
-      context: ./AVs/fsecure
-      dockerfile: Dockerfile
-    networks:
-    - internal
-    volumes:
-    - scan-malware:/malware
-
-  mcafee:
-    image: mcafee:latest
-    container_name: ${NAMESPACE}-mcafee
-    build:
-      context: ./AVs/mcafee
-      dockerfile: Dockerfile
-    networks:
-    - internal
-    volumes:
-    - scan-malware:/malware
-
-  sophos:
-    image: sophos:latest
-    container_name: ${NAMESPACE}-sophos
-    build:
-      context: ./AVs/sophos
-      dockerfile: Dockerfile
-    networks:
-    - internal
-    volumes:
-    - scan-malware:/malware
-
-networks:
-  internal:
-    driver: bridge
-  web:
-    external: true
+      - scan-malware:/malware
 
 volumes:
   scan-db:
