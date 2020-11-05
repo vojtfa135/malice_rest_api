@@ -15,7 +15,7 @@ def db_init(db_path="/var/www/db/"):
 def db_get_entry(entry):
     with open(os.path.join(db_init()[1], entry), "r") as db_entry:
         db_dump = db_entry.read()
-        return db_dump # json.dumps(db_dump)
+        return json.dumps(db_dump)
 
 
 def db_make_entry(fp, content):
