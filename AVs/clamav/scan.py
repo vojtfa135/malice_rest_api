@@ -1,6 +1,6 @@
 import argparse
 import subprocess
-
+import json
 
 def parser():
     parser = argparse.ArgumentParser(description="Scan malware")
@@ -25,7 +25,7 @@ class ClamAV():
             self.result_template["signature"] = scan[start:end]
             self.result_template["infected"] = True
 
-        return self.result_template
+        return json.dumps(self.result_template)
 
 
 def main():
