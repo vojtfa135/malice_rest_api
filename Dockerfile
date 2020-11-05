@@ -12,7 +12,4 @@ WORKDIR /opt/service
 
 COPY . .
 
-EXPOSE 8890
-
 CMD ["/bin/bash"]
-
