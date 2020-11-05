@@ -3,7 +3,9 @@
 ####################################################
 FROM golang:1.11 as go_builder
 
-COPY . /go/src/github.com/malice-plugins/sophos
+RUN git clone --depth=1 https://github.com/malice-plugins/sophos /go/src/github.com/malice-plugins/sophos
+# COPY . /go/src/github.com/malice-plugins/sophos
+
 WORKDIR /go/src/github.com/malice-plugins/sophos
 RUN go get -u github.com/golang/dep/cmd/dep && dep ensure
 RUN go build -ldflags "-s -w -X main.Version=v$(cat VERSION) -X main.BuildTime=$(date -u +%Y%m%d)" -o /bin/avscan

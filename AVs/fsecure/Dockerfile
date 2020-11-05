@@ -3,7 +3,9 @@
 ####################################################
 FROM golang:1.11 as go_builder
 
-COPY . /go/src/github.com/malice-plugins/fsecure
+RUN git clone --depth=1 https://github.com/malice-plugins/fsecure /go/src/github.com/malice-plugins/fsecure
+#COPY . /go/src/github.com/malice-plugins/fsecure
+
 WORKDIR /go/src/github.com/malice-plugins/fsecure
 RUN go get -u github.com/golang/dep/cmd/dep && dep ensure
 RUN go build -ldflags "-s -w -X main.Version=v$(cat VERSION) -X main.BuildTime=$(date -u +%Y%m%d)" -o /bin/avscan

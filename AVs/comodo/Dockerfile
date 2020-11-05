@@ -3,7 +3,9 @@
 ####################################################
 FROM golang:1.11 as go_builder
 
-COPY . /go/src/github.com/malice-plugins/comodo
+RUN git clone --depth=1 https://github.com/malice-plugins/comodo /go/src/github.com/malice-plugins/comodo
+# COPY . /go/src/github.com/malice-plugins/comodo
+
 WORKDIR /go/src/github.com/malice-plugins/comodo
 RUN go get -u github.com/golang/dep/cmd/dep && dep ensure
 RUN go build -ldflags "-s -w -X main.Version=v$(cat VERSION) -X main.BuildTime=$(date -u +%Y%m%d)" -o /bin/avscan

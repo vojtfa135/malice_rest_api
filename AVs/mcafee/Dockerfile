@@ -3,7 +3,9 @@
 ####################################################
 FROM golang:1.11 as go_builder
 
-COPY . /go/src/github.com/malice-plugins/mcafee
+RUN git clone --depth=1 https://github.com/malice-plugins/mcafee /go/src/github.com/malice-plugins/mcafee
+# COPY . /go/src/github.com/malice-plugins/mcafee
+
 WORKDIR /go/src/github.com/malice-plugins/mcafee
 RUN go get -u github.com/golang/dep/cmd/dep && dep ensure
 RUN go build -ldflags "-s -w -X main.Version=v$(cat VERSION) -X main.BuildTime=$(date -u +%Y%m%d)" -o /bin/avscan

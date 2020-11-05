@@ -10,8 +10,8 @@ import os
 
 app = Flask(__name__)
 app.config.update(
-    CELERY_BROKER_URL='redis://localhost:6379',
-    CELERY_RESULT_BACKEND='redis://localhost:6379'
+    CELERY_BROKER_URL='redis://redis:6379',
+    CELERY_RESULT_BACKEND='redis://redis:6379'
 )
 celery = make_celery(app)
 
@@ -64,21 +64,26 @@ def scan_file(malware="malware_file"):
     today = datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
     scan_dir = "/var/www/scans/"
     fp = os.path.join(scan_dir, malware)
-    container_working_dir = "/malware"
+    container_working_dir = os.path.join("/malware", malware)
     mount = scan_dir + ":" + container_working_dir
-    antiviruses = ["clamav", "comodo", "escan", "fsecure", "mcafee", "sophos"]
+    # antiviruses = ["clamav", "comodo", "escan", "fsecure", "mcafee", "sophos"]
+    antiviruses = ["comodo", "escan", "fsecure"]
     results = {
             "md5_hash": db_make_md5_hash(fp),
             "scan_date": today,
             "results": {
-                        "clamav": {"infected": "", "malware_info": ""},
                         "comodo": {"infected": "", "malware_info": ""},
                         "escan": {"infected": "", "malware_info": ""},
-                        "fsecure": {"infected": "", "malware_info": ""},
-                        "mcafee": {"infected": "", "malware_info": ""},
-                        "sophos": {"infected": "", "malware_info": ""}
+                        "fsecure": {"infected": "", "malware_info": ""}
                    }
             }
+
+                        # "clamav": {"infected": "", "malware_info": ""},
+                        # "comodo": {"infected": "", "malware_info": ""},
+                        # "escan": {"infected": "", "malware_info": ""},
+                        # "fsecure": {"infected": "", "malware_info": ""},
+                        # "mcafee": {"infected": "", "malware_info": ""},
+                        # "sophos": {"infected": "", "malware_info": ""}
 
     for antivirus in antiviruses:
         scan = str(subprocess.run(["docker", "run", "-v", mount, antivirus, malware], stdout=subprocess.PIPE).stdout)
