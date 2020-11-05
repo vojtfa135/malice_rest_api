@@ -14,8 +14,12 @@ RUN yum install -y wget \
 
 RUN freshclam
 
+RUN mkdir /scan
+
+COPY scan.py /scan
+
 RUN mkdir /malware
 
 WORKDIR /malware
 
-ENTRYPOINT ["/bin/bash", "-l", "-c"]
+ENTRYPOINT ["/usr/bin/python3", "/scan/scan.py", "--path"]
