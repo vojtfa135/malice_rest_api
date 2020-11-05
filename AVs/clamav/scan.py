@@ -1,6 +1,7 @@
 import argparse
 import subprocess
 
+
 def parser():
     parser = argparse.ArgumentParser(description="Scan malware")
     parser.add_argument("--path", help="Provide path to a file")
