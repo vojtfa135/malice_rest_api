@@ -1,27 +1,32 @@
-import subprocess
-import os
-import json
 import hashlib
 import pathlib
+import pymongo
 
 
-def db_init(db_path="/var/www/db/"):
-    db = str(subprocess.run(["ls", db_path], stdout=subprocess.PIPE).stdout)
-    db = db.strip("b'").split("\\n")
-    db.remove("")
-    return db, db_path
+def db_conn():
+    return pymongo.MongoClient("mongodb://database:27017")
 
 
-def db_get_entry(entry):
-    with open(os.path.join(db_init()[1], entry), "r") as db_entry:
-        db_dump = db_entry.read()
-        return json.dumps(db_dump)
+def db_init(db_name="malware"):
+    return db_conn()[db_name]
 
 
-def db_make_entry(fp, content):
-    key = db_make_md5_hash(fp)
-    with open(os.path.join(db_init()[1], key), "w") as db_entry:
-        db_dump = db_entry.write(content)
+def db_make_col(col_name="samples"):
+    return db_init()[col_name]
+
+
+def db_make_entry(entry):
+    return db_make_col().insert_one(entry)
+
+
+def db_get_entry(md5_hash):
+    query = {"md5_hash": md5_hash}
+    return db_make_col().find_one(query)
+
+
+def db_delete_entry(md5_hash):
+    query = {"md5_hash": md5_hash}
+    return db_make_col().delete_one(query)
 
 
 def db_make_md5_hash(fp):
