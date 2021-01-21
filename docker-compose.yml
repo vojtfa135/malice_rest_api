@@ -1,45 +1,72 @@
 ---
 version: "3.7"
 services:
-  server:
-    container_name: malice_flask_app
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - 8890:8890
-    expose:
-      - 8890
-    volumes:
-      - ./app.py:/var/www/cgi-bin/app.py
-      - ./db.py:/var/www/cgi-bin/db.py
-      - ./celery_init.py:/var/www/cgi-bin/celery_init.py
-      - scan-data:/var/www/scans
-      - scan-db:/var/www/db
-    environment:
-      - FLASK_APP=app.py
-      - FLASK_ENV=development
-      - FLASK_RUN_HOST=0.0.0.0
-      - FLASK_RUN_PORT=8890
-    depends_on:
-      - redis
-      - clamav
-    command: ["./entrypoint.sh"]
+  core:
+      container_name: malice_core
+      build:
+        context: .
+        dockerfile: ./Dockerfile
+      ports:
+        - 8890:8890
+      expose:
+        - 8890
+      command: python3 app.py
+      volumes:
+        - ./app.py:/opt/service/app.py
+        - ./db.py:/opt/service/db.py
+        - ./scan-data:/var/www/scans:rw
+        - /var/run/docker.sock:/var/run/docker.sock
+      environment:
+        - FLASK_APP=app.py
+        - FLASK_ENV=development
+        - FLASK_RUN_HOST=0.0.0.0
+        - FLASK_RUN_PORT=8890
+      links:
+        - worker
+        - database
+        - clamav
+
+  worker:
+      container_name: malice_worker
+      build:
+        context: .
+        dockerfile: ./Dockerfile
+      command: celery -A app.celery worker
+      volumes:
+        - ./app.py:/opt/service/app.py
+        - ./db.py:/opt/service/db.py
+        - ./scan-data:/var/www/scans:rw
+        - /var/run/docker.sock:/var/run/docker.sock
+      environment:
+        - FLASK_APP=app.py
+        - FLASK_ENV=development
+        - FLASK_RUN_HOST=0.0.0.0
+        - FLASK_RUN_PORT=8890
+      links:
+        - redis
+
+  database:
+      container_name: malice_db
+      image: mongo
+      ports:
+        - 27017:27017
+      expose:
+        - 27017
+      volumes:
+        - ./mongodata:/data/db
 
   redis:
-    image: redis
-    container_name: redis
+      container_name: malice_redis
+      image: redis
+      hostname: redis
+      expose:
+        - 6379
 
   clamav:
-    image: clamav:latest
-    container_name: malice_rest_clamav
-    build:
-      context: ./AVs/clamav
-      dockerfile: Dockerfile
-    volumes:
-      - scan-malware:/malware
-
-volumes:
-  scan-db:
-  scan-data:
-  scan-malware:
+      image: clamav
+      container_name: malice_clamav
+      build:
+        context: ./AVs/clamav
+        dockerfile: Dockerfile
+      volumes:
+        - ./scan-data:/malware:rw
