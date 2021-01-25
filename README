@@ -4,36 +4,5 @@ This project builds upon the Malice project - https://github.com/maliceio/malice
 ###################################GET STARTED###################################
 #################################################################################
 
-Requirements:
-Flask
-Celery
-Redis -> This runs in Docker, see in Quick start with Redis
-
-
-Quick start with Flask:
-
-1) pip install flask
-2) export FLASK_APP=app.py
-3) export FLASK_ENV=development
-4) flask run
-
-
-Quick start with Redis:
-
-1) docker run -d -p 6379:6379 redis
-
-
-Quick start with Celery:
-
-1) pip install celery
-2) celery -A app.celery worker
-
-
-DIRECTORY SYSTEM
-
-/var/www/ -> cgi-bin -> app.py          -> This is the main script where the Flask magic happens
-		     -> celery_init.py  -> This is a celery app builder, it's needed for background tasks (scan)
-		     -> db.py           -> These are functions that handle basic database functionality, for now they are being saved as files into the db directory
-
-          -> scans -> This is where the app stores the uploaded file
-	  -> db    -> This is where the app stores its scan results
+TODO
+docker-compose up
