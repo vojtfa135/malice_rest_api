@@ -6,11 +6,10 @@ import subprocess
 from datetime import datetime
 import os
 
-
 app = Flask(__name__)
 celery = Celery("app", backend="redis://redis:6379/0", broker="redis://redis:6379/0")
 celery.conf.beat_schedule = {
-    # Executes every Monday morning at 7:30 a.m.
+    # Executes everyday at 12
     'rebuild-av-images-everyday-at-twelve': {
         'task': 'tasks.rebuild_av_images',
         'schedule': crontab(hour=14),
