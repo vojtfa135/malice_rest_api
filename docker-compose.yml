@@ -21,6 +21,8 @@ services:
         - FLASK_ENV=development
         - FLASK_RUN_HOST=0.0.0.0
         - FLASK_RUN_PORT=8890
+        - SCAN_DIR=/var/www/scans/
+        - AV_SCAN_DIR=/home/core/malice_rest_api/scan-data/
       links:
         - worker
         - database
@@ -42,6 +44,8 @@ services:
         - FLASK_ENV=development
         - FLASK_RUN_HOST=0.0.0.0
         - FLASK_RUN_PORT=8890
+        - SCAN_DIR=/var/www/scans/
+        - AV_SCAN_DIR=/home/core/malice_rest_api/scan-data/
       links:
         - redis
 
