@@ -1,5 +1,4 @@
-from flask import Flask, request
-from celery import Celery
+from celery.schedules import crontab
 from db import db_init, db_get_entry, db_make_entry, db_make_md5_hash, db_conn, db_make_col, db_delete_entry
 import json
 from bson import ObjectId
@@ -10,6 +9,14 @@ import os
 
 app = Flask(__name__)
 celery = Celery("app", backend="redis://redis:6379/0", broker="redis://redis:6379/0")
+celery.conf.beat_schedule = {
+    # Executes every Monday morning at 7:30 a.m.
+    'rebuild-av-images-everyday-at-twelve': {
+        'task': 'tasks.rebuild_av_images',
+        'schedule': crontab(hour=14),
+    },
+}
+celery.conf.timezone = "Europe/Prague"
 
 
 @app.route("/")
@@ -20,15 +27,17 @@ def index():
 @app.route("/debug")
 def debug():
     md5_hash = "09f7e02f1290be211da707a266f153b3"
-    return "{}".format(db_get_entry(md5_hash))
+    rebuild_av_images.delay()
+    return "{}".format(db_delete_entry(md5_hash))
 
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload_file():
     if request.method == "POST":
+        to_scan_path = os.path.join(os.getenv("SCAN_DIR"), "malware_file")
         file_to_scan = request.files["file"]
-        file_to_scan.save("/var/www/scans/malware_file")
-        md5_key = db_make_md5_hash("/var/www/scans/malware_file")
+        file_to_scan.save(to_scan_path)
+        md5_key = db_make_md5_hash(to_scan_path)
         if bool(db_get_entry(md5_key)):
             return JSONEncoder().encode(db_get_entry(md5_key))
         else:
@@ -68,8 +77,8 @@ def task_processing(filename):
 @celery.task(name="scan_file")
 def scan_file(malware="malware_file"):
     today = datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
-    scan_dir = "/var/www/scans/"
-    mount_scan_dir = "/home/core/malice_rest_api/scan-data/"
+    scan_dir = os.getenv("SCAN_DIR")
+    mount_scan_dir = os.getenv("AV_SCAN_DIR")
     fp = os.path.join(scan_dir, malware)
     container_working_dir = "/malware"
     mount = mount_scan_dir + ":" + container_working_dir
@@ -97,6 +106,13 @@ def scan_file(malware="malware_file"):
             results["results"][antivirus]["malware_info"] = scan["signature"]
 
     db_make_entry(results)
+
+
+@celery.task(name="rebuild_av_images")
+def rebuild_av_images():
+    av_image_names = ["clamav"]
+    for image_name in av_image_names:
+        subprocess.run(["docker", "build", "-t", "{}:latest".format(image_name), "AVs/{}".format(image_name) ], stdout=subprocess.DEVNULL)
 
 
 class JSONEncoder(json.JSONEncoder):
